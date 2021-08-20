@@ -1,10 +1,12 @@
 import requests
+from requests_futures.sessions import FuturesSession
+from concurrent.futures import as_completed
 
 from pifx import util
 
 
 class LIFXWebAPIClient:
-    def __init__(self, api_key, http_endpoint=None):
+    def __init__(self, api_key, http_endpoint=None, is_async=False):
         if http_endpoint == None:
             self.http_base = "https://api.lifx.com/v1/"
         else:
@@ -12,7 +14,12 @@ class LIFXWebAPIClient:
 
         self.api_key = api_key
         self.headers = util.generate_auth_header(self.api_key)
-        self._s = requests.Session()
+        self.is_async = is_async
+        if self.is_async:
+            # Configure event loop for up to 10 concurrent requests to avoid rate-limiting by Lifx.
+            self._s = FuturesSession(max_workers=10)
+        else:
+            self._s = requests.Session()
 
     def _full_http_endpoint(self, suffix):
         return self.http_base + suffix
@@ -34,18 +41,36 @@ class LIFXWebAPIClient:
         if argument_tuples is not None:
             data = util.arg_tup_to_dict(argument_tuples)
 
+        request_parameters = {
+            "method": method,
+            "url": http_endpoint,
+            "headers": self.headers
+        }
+
         if json_body:
-            res = self._s.request(
-                method=method, url=http_endpoint, json=json_body, headers=self.headers)
+            request_parameters["json"] = json_body
         else:
-            res = self._s.request(
-                method=method, url=http_endpoint, data=data, headers=self.headers)
+            request_parameters["data"] = data
 
-        parsed_response = util.parse_response(res)
+        if self.is_async:
+            # Attach correct hook for async parsing of response
+            if parse_data:
+                request_parameters["hooks"] = {"response": util.process_response_with_results}
+            else:
+                request_parameters["hooks"] = {"response": util.process_response}
 
-        util.handle_error(res)
+        # Call request routine/coroutine
+        result = self._s.request(**request_parameters)
+
+        if self.is_async:
+            return result
+
+        parsed_response = util.parse_response(result)
+
+        util.handle_error(result)
 
         if parse_data:
             return util.parse_data(parsed_response)
 
         return parsed_response
+

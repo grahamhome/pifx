@@ -64,7 +64,8 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[
         'requests',
-        'six'
+        'six',
+        'requests-futures'
     ],
 
     include_package_data=True,

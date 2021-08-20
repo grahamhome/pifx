@@ -20,17 +20,18 @@ from pifx.client import LIFXWebAPIClient
 
 class PIFX:
     """Main PIFX class"""
-    def __init__(self, api_key, http_endpoint=None):
-        self.client = LIFXWebAPIClient(api_key, http_endpoint)
+    def __init__(self, api_key, http_endpoint=None, is_async=False):
+        self.client = LIFXWebAPIClient(api_key, http_endpoint, is_async)
 
     def list_lights(self, selector='all'):
         """Given a selector (defaults to all), return a list of lights.
         Without a selector provided, return list of all lights.
         """
 
-        return self.client.perform_request(
+        response = self.client.perform_request(
             method='get', endpoint='lights/{}',
             endpoint_args=[selector], parse_data=False)
+        return response
 
     def set_state(self, selector='all',
         power=None, color=None, brightness=None, duration=None):

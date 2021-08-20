@@ -29,6 +29,7 @@ def generate_auth_header(api_key):
     }
     return headers
 
+
 def arg_tup_to_dict(argument_tuples):
     """Given a set of argument tuples, set their value in a data dictionary if not blank"""
     data = dict()
@@ -42,14 +43,17 @@ def arg_tup_to_dict(argument_tuples):
 
     return data
 
+
 def parse_data(parsed_data):
     """Given parsed response, return correct return values"""
     return parsed_data['results']
+
 
 def parse_response(response):
     """Parse JSON API response, return object."""
     parsed_response = json.loads(response.text)
     return parsed_response
+
 
 def handle_error(response):
     """Raise appropriate exceptions if necessary."""
@@ -62,10 +66,36 @@ def handle_error(response):
     else:
         return True
 
+
+def process_response(response, *args, **kwargs):
+    """
+    Parses the correct return values from a response, raising appropriate exceptions if necessary.
+    Attaches the return values to the response object.
+    """
+    parsed_response = parse_response(response)
+
+    handle_error(response)
+
+    response.parsed = parsed_response
+
+
+def process_response_with_results(response, *args, **kwargs):
+    """
+    Parses the correct return values from a response, raising appropriate exceptions if necessary.
+    Attaches the return values to the response object.
+    """
+    parsed_response = parse_response(response)
+
+    handle_error(response)
+
+    response.parsed = parse_data(parsed_response)
+
+
 def encode_url_path(url):
     """Encodes the path url string replacing special characters with properly escaped sequences.
     Not intended for use with query string parameters. """
     return six.moves.urllib.parse.quote(url)
+
 
 def encode_url_arg(self, url_arg):
     arg_regex = '(\w+):(.*)'
