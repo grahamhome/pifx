@@ -23,17 +23,17 @@ class PIFX:
     def __init__(self, api_key, http_endpoint=None, is_async=False):
         self.client = LIFXWebAPIClient(api_key, http_endpoint, is_async)
 
-    def list_lights(self, selector='all'):
+    async def list_lights(self, selector='all'):
         """Given a selector (defaults to all), return a list of lights.
         Without a selector provided, return list of all lights.
         """
 
-        response = self.client.perform_request(
+        response = await self.client.perform_request(
             method='get', endpoint='lights/{}',
             endpoint_args=[selector], parse_data=False)
         return response
 
-    def set_state(self, selector='all',
+    async def set_state(self, selector='all',
         power=None, color=None, brightness=None, duration=None):
         """Given a selector (defaults to all), set the state of a light.
         Selector can be based on id, scene_id, group_id, label, etc.
@@ -69,7 +69,7 @@ class PIFX:
             ('duration', duration)
         ]
 
-        return self.client.perform_request(
+        return await self.client.perform_request(
             method='put', endpoint='lights/{}/state',
             endpoint_args=[selector], argument_tuples=argument_tuples)
 

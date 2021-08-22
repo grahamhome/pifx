@@ -1,5 +1,5 @@
 import requests
-from requests_futures.sessions import FuturesSession
+import aiohttp
 from concurrent.futures import as_completed
 
 from pifx import util
@@ -17,14 +17,14 @@ class LIFXWebAPIClient:
         self.is_async = is_async
         if self.is_async:
             # Configure event loop for up to 10 concurrent requests to avoid rate-limiting by Lifx.
-            self._s = FuturesSession(max_workers=10)
+            self._s = aiohttp.ClientSession()
         else:
             self._s = requests.Session()
 
     def _full_http_endpoint(self, suffix):
         return self.http_base + suffix
 
-    def perform_request(
+    async def perform_request(
         self,
         method,
         endpoint,
@@ -53,21 +53,19 @@ class LIFXWebAPIClient:
             request_parameters["data"] = data
 
         if self.is_async:
-            # Attach correct hook for async parsing of response
-            if parse_data:
-                request_parameters["hooks"] = {"response": util.process_response_with_results}
-            else:
-                request_parameters["hooks"] = {"response": util.process_response}
+            async with self._s.request(**request_parameters) as response:
+                result = response
+                result_text = await response.text()
+                result_status = response.status
+        else:
+            # Call request routine
+            result = self._s.request(**request_parameters)
+            result_text = result.text()
+            result_status = result.status_code
 
-        # Call request routine/coroutine
-        result = self._s.request(**request_parameters)
+        parsed_response = util.parse_response(result_text)
 
-        if self.is_async:
-            return result
-
-        parsed_response = util.parse_response(result)
-
-        util.handle_error(result)
+        util.handle_error(result_status)
 
         if parse_data:
             return util.parse_data(parsed_response)

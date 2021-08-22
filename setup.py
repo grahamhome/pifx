@@ -65,7 +65,7 @@ setup(
     install_requires=[
         'requests',
         'six',
-        'requests-futures'
+        'aiohttp'
     ],
 
     include_package_data=True,

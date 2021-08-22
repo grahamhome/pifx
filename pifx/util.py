@@ -49,15 +49,14 @@ def parse_data(parsed_data):
     return parsed_data['results']
 
 
-def parse_response(response):
+def parse_response(response_text):
     """Parse JSON API response, return object."""
-    parsed_response = json.loads(response.text)
+    parsed_response = json.loads(response_text)
     return parsed_response
 
 
-def handle_error(response):
+def handle_error(status_code):
     """Raise appropriate exceptions if necessary."""
-    status_code = response.status_code
 
     if status_code not in A_OK_HTTP_CODES:
         error_explanation = A_ERROR_HTTP_CODES.get(status_code)
@@ -65,30 +64,6 @@ def handle_error(response):
         raise Exception(raise_error)
     else:
         return True
-
-
-def process_response(response, *args, **kwargs):
-    """
-    Parses the correct return values from a response, raising appropriate exceptions if necessary.
-    Attaches the return values to the response object.
-    """
-    parsed_response = parse_response(response)
-
-    handle_error(response)
-
-    response.parsed = parsed_response
-
-
-def process_response_with_results(response, *args, **kwargs):
-    """
-    Parses the correct return values from a response, raising appropriate exceptions if necessary.
-    Attaches the return values to the response object.
-    """
-    parsed_response = parse_response(response)
-
-    handle_error(response)
-
-    response.parsed = parse_data(parsed_response)
 
 
 def encode_url_path(url):
