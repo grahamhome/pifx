@@ -6,7 +6,7 @@ from pifx import util
 
 
 class LIFXWebAPIClient:
-    def __init__(self, api_key, http_endpoint=None, is_async=False):
+    def __init__(self, api_key, http_endpoint=None, is_async=False, loop=None):
         if http_endpoint == None:
             self.http_base = "https://api.lifx.com/v1/"
         else:
@@ -17,7 +17,10 @@ class LIFXWebAPIClient:
         self.is_async = is_async
         if self.is_async:
             # Configure event loop for up to 10 concurrent requests to avoid rate-limiting by Lifx.
-            self._s = aiohttp.ClientSession()
+            if loop:
+                self._s = aiohttp.ClientSession(loop=loop)
+            else:
+                self._s = aiohttp.ClientSession()
         else:
             self._s = requests.Session()
 
